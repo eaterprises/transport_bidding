@@ -18,15 +18,43 @@ app.use(express.compress());
 app.get('/api/transport_cycle', function(req, res) {
   db.TransportCycle.find({}, { package_list: 0 }, function(err, data) {
     var retval = [];
-    data.forEach(function(e) {
-      var text = "TC" + e.tc_num + " " + moment(e.end_date).format("D-MM-YYYY");
-      retval.push({ 
-        display_text: text,
-        _id: e._id
-      });
+    var coordIdList = _.map(data, function(val) {
+      return val.transport_cycle_coordinator_id;
     });
-    res.json(retval);
+    
+    db.Coordinator.find({ _id: { $in: coordIdList } },
+      { organisation: 1, _id: 1 }, function(err, tcList) {
+        data.forEach(function(e) {
+	  var tc = tcList.filter(function(tcData) {
+	    return tcData._id == e.transport_cycle_coordinator_id 
+          });
+          
+          var text = "TC" + e.tc_num + " " + tc[0].organisation + " " + 
+            moment(e.end_date).format("D-MM-YYYY");
+            
+          retval.push({ 
+            display_text: text,
+            _id: e._id
+          });
+        });
+   
+        res.json(retval);
+      }
+    );
   });
+});
+
+app.post("/api/bids/:bid_id/package/:package_id/status/:bid_status", function(req, res) {
+  console.log(req.params);
+  db.Bid.update({ package_id: req.params.package_id }, { bid_status: 2 }, { multi: true },
+    function() {
+      if (req.params.bid_status == 1) 
+        db.Bid.update({ _id: req.params.bid_id }, { bid_status: 1 }, {},
+        function() {
+          res.send(200);
+        });
+      else res.send(200);
+    });
 });
 
 app.get('/api/bidders/:tc_id', function(req, res) {
