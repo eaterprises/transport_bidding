@@ -142,7 +142,36 @@ app.get('/api/products/:id', function(req, res) {
     else res.json(data.package_list);
   });
 });
-// 52a3af9e472da60000000012
+app.get('/api/products/:id/:status', function(req, res) {
+  db.TransportCycle.findOne({ _id: req.params.id, is_active: req.params.status}, function(err, data) {
+    if (data === null) res.send('');
+    else res.json(data.package_list);
+  });
+});
+app.get('/api/transport_cycle/no_bids/:id', function(req, res) {
+  db.TransportCycle.findOne({ _id: req.params.id }, function(err, data) {
+    if (data === null) res.send('');
+    else {
+      var package_ids = [];
+      var package_id_mapping = [];
+      var all_bids = [];
+      data.package_list.forEach(function(e) {
+        package_ids.push({"package_id":e._id});
+        package_id_mapping[e._id] = e;
+      });
+      db.Bid.find({ $or: package_ids}, function(error, bids) {
+          for(var i = 0; i < bids.length; i++){
+            delete(package_id_mapping[bids[i].package_id]);
+          }
+          var no_bid_list = [];
+          for(var f in package_id_mapping)
+            no_bid_list.push(package_id_mapping[f]);
+          res.json(no_bid_list);
+      });      
+    }
+  });
+});
+
 app.get('/api/bids/:id', function(req, res) {
   db.TransportCycle.findOne({ _id: req.params.id }, function(err, data) {
     if (data === null) res.send('');
