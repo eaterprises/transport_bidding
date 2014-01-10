@@ -24,20 +24,21 @@ app.get('/api/transport_cycle', function(req, res) {
     
     db.Coordinator.find({ _id: { $in: coordIdList } },
       { organisation: 1, _id: 1 }, function(err, tcList) {
-        data.forEach(function(e) {
-	  var tc = tcList.filter(function(tcData) {
-	    return tcData._id == e.transport_cycle_coordinator_id 
+        if(data){
+          data.forEach(function(e) {
+            var tc = tcList.filter(function(tcData) {
+              return tcData._id == e.transport_cycle_coordinator_id 
+            });
+                
+            var text = "TC" + e.tc_num + " " + tc[0].organisation + " " + 
+              moment(e.end_date).format("D-MM-YYYY");
+              
+            retval.push({ 
+              display_text: text,
+              _id: e._id
+            });
           });
-          
-          var text = "TC" + e.tc_num + " " + tc[0].organisation + " " + 
-            moment(e.end_date).format("D-MM-YYYY");
-            
-          retval.push({ 
-            display_text: text,
-            _id: e._id
-          });
-        });
-   
+        }
         res.json(retval);
       }
     );
