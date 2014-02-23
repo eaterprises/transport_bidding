@@ -206,10 +206,17 @@ angular.module("transportBiddingApp")
     };
 
     $s.resetFilters = function() {
+      $s.search_product = $s.search_bidder_name = $s.search_bidder_email = $s.search_src = $s.search_dest = "";
+      $s.clearSelectedBidders();
+      $s.showAccepted = false;
       $s.filterAddr = "";
       delete $s.visibleLineLineLatLon;
     };
-
+    $s.clearSelectedBidders = function(){
+      $s.bidderList.forEach(function(e) {
+        e.isSelected = false;
+      });
+    }
     $s.clearBids = function() {
       $s.bidLatLonArray = [];
 
