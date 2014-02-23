@@ -12,7 +12,7 @@
       <div class="btn btn-danger" ng-hide="number_no_bid_items == 0 ">There are {{number_no_bid_items}} items with no bids
       </div>
       <label class="checkbox">
-        <input type="checkbox" ng-model="showAccepted" ng-change='filterAccepted()'>Show Accepted Bids
+        <input type="checkbox" ng-model="showAccepted">Show Accepted Bids
       </label>
     </div>
     <div class="span3">
@@ -74,7 +74,7 @@
         </thead>
         <tbody>
           <tr ng-click="onRowClick(row)"
-              ng-repeat="row in productData | filter:filterProducts | filter:filterAddress | orderBy:sortCol:sortReverse[sortCol]">
+              ng-repeat="row in productData | filter:filterProducts | filter:filterAddress | filter:filterAccepted | filter: filterBidder | orderBy:sortCol:sortReverse[sortCol]">
             <td>{{row.bidder_name}}</td>
             <td>{{row.bidder_email}}</td>
             <td>{{row.product_name}}</td>
