@@ -2,6 +2,7 @@ var mongo = require('mongoose'),
   autoIncrement = require('mongoose-auto-increment');
 var dbconf = require('../conf/dbconf.js');
 
+console.log('mongodb://' + dbconf.mongoUrl);
 mongo.connect('mongodb://' + dbconf.mongoUrl);
 
 autoIncrement.initialize(mongo);
