@@ -7,8 +7,19 @@ angular.module("transportBiddingApp")
     $s.isReverse = false;
     $s.showAccepted = false;
 
+    $s.noBidUser =   {
+          "bidder_name": "No bid",
+          "bidder_email": "",
+          "bidder_mobile": ""
+        };
+        
+    $s.showNoBids = function(){
+      $s.bidderList[0].isSelected = true;
+      $s.getSelectedBidders($s.bidderList);
+    }
     $s.updateBidders = function(tc_id) {
       http.get("/api/bidders/" + tc_id).success(function(data) {
+        data.unshift($s.noBidUser);
         $s.bidderList = data;
       }); 
     };
@@ -23,7 +34,6 @@ angular.module("transportBiddingApp")
       $s.transportCycleList = data;
       $s.transportCycle = data[0];
       $s.getProductData(); 
-      $s.getPackagesWithNoBids();
       $s.updateBidders($s.transportCycle._id); 
     });
     //make more generic @todo
@@ -106,6 +116,24 @@ angular.module("transportBiddingApp")
     $s.getPackagesWithNoBids = function(){
       http.get("/api/transport_cycle/no_bids/" + $s.transportCycle._id).success(function(data) {
         $s.number_no_bid_items = data.length;
+        for(var j = 0; j < data.length; j++){
+          var bid = data[j];
+          ["bidder_name","bidder_email","bidder_mobile"].forEach(function(item){
+            bid[item] = $s.noBidUser[item];
+          });
+          bid.nobid = true;
+
+          var addArr = [];
+          for (var row in data) {
+            var src = data[row].supply_address;
+            var dest = data[row].delivery_address;
+            var srcLatLon = data[row].supply_lat_lon;
+            var destLatLon = data[row].delivery_lat_lon;
+            $s.addressArray.push({src: src, dest: dest, srcLatLon: srcLatLon,
+              destLatLon: destLatLon});
+          }
+          $s.productData.push(bid);
+        }
       });
     }
     $s.getSelectedBidders = function(bidderList){
@@ -121,23 +149,21 @@ angular.module("transportBiddingApp")
     $s.getProductData = function() {
       http.get("/api/bids/" + $s.transportCycle._id).success(function(data) {
         $s.productData = [];
+        $s.addressArray = [];
         for(var j = 0; j < data.length; j++){
           var bid = data[j];
-          
           var addArr = [];
-
           for (var row in data) {
             var src = data[row].supply_address;
             var dest = data[row].delivery_address;
             var srcLatLon = data[row].supply_lat_lon;
             var destLatLon = data[row].delivery_lat_lon;
-
-            addArr.push({src: src, dest: dest, srcLatLon: srcLatLon,
+            $s.addressArray.push({src: src, dest: dest, srcLatLon: srcLatLon,
               destLatLon: destLatLon});
           }
           $s.productData.push(bid);
         }
-        $s.addressArray = addArr;
+        $s.getPackagesWithNoBids();
       });
     };
 
