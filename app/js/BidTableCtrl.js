@@ -131,6 +131,7 @@ angular.module("transportBiddingApp")
     };
 
     $s.resetFilters = function() {
+      $s.search_product = $s.search_bidder_name = $s.search_bidder_email = $s.search_src = $s.search_dest = "";
       $s.filterAddr = "";
       delete $s.visibleLineLineLatLon;
     };
