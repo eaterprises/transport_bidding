@@ -9,11 +9,7 @@
 </div>
 
 <map visible-path-array="bidLatLonArray" visible-path="visibleLineLineLatLon" address-array="addressArray" selected-addr-mdl="filterAddr"></map>
-<div class="transport-cycle-menu">
-  <select ng-model='transportCycle' 
-    ng-options="tc.display_text for tc in transportCycleList" 
-    ng-change="getProductData()"/>
-</div>
+
 <div class="container">
   <div class="row-fluid">
     <div class="span9">
@@ -62,6 +58,11 @@
       </table>
     </div>
     <div class="span3">
+<div class="transport-cycle-menu">
+  <select ng-model='transportCycle' 
+    ng-options="tc.display_text for tc in transportCycleList" 
+    ng-change="getProductData()"/>
+</div>      
         <form><button class="btn" ng-click="resetFilters()">Clear Search / Show All</button></form>
     </div>
 
