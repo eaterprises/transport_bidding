@@ -1,7 +1,9 @@
 <adminmenu></adminmenu>
-<map visible-path-array="bidLatLonArray" visible-path="visibleLineLineLatLon" address-array="addressArray" selected-addr-mdl="filterAddr"></map>
-<div class="container">
+<div class="container" style='padding: 0'>
   <div class="row-fluid">
+    <div class="span9">
+      <map visible-path-array="bidLatLonArray" visible-path="visibleLineLineLatLon" address-array="addressArray" bidders="bidders" product-data="productData"></map>
+    </div>
     <div class="span3">
       <div class="transport-cycle-menu">
         <select ng-model='transportCycle' 
@@ -14,18 +16,13 @@
       <label class="checkbox">
         <input type="checkbox" ng-model="showAccepted">Show Accepted Bids
       </label>
-    </div>
-    <div class="span3">
+
       <h3>Bidder List</h3>
       <div ng-repeat="b in bidderList">
         <label class="checkbox">
           <input type="checkbox" ng-model="b.isSelected" ng-change='getSelectedBidders(bidderList)'> {{b.bidder_name}} ({{b.bidder_email}}) - {{b.bidder_mobile}}
         </label>
       </div>
-    </div>
-    <div class="span3">
-
-      
         <form><button class="btn" ng-click="resetFilters()">Clear Search / Show All</button></form>
     </div>
   </div>

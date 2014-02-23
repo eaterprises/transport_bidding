@@ -5,7 +5,9 @@ angular.module("transportBiddingApp").directive('map',
               addressArray: "=addressArray", //{ src, dest, srcLatLon, destLatLon }
               selectedAddrMdl: "=selectedAddrMdl",
               visiblePath: "=visiblePath",
-              visiblePathArray: "=visiblePathArray"
+              visiblePathArray: "=visiblePathArray",
+              bidders: "=bidders",
+              productData: "=productData"
             },
             restrict: 'E',
             replace: true,
@@ -13,6 +15,7 @@ angular.module("transportBiddingApp").directive('map',
             controller: ['$scope', function($s) {
                 var addressLatLon = [];
                 var bidLines = [];
+                $s.markerList = [];
 
                 $s.$watch('visiblePath', function(latLon) {
                   if (angular.isUndefined(latLon)) {
@@ -56,7 +59,7 @@ angular.module("transportBiddingApp").directive('map',
                     map: $s.map,
                     icon: icon
                   });
-
+                  $s.markerList.push(marker);
                   google.maps.event.addListener(marker, "click", function() {
                     $s.selectedAddrMdl = addr;
                     $s.$apply();
@@ -71,6 +74,55 @@ angular.module("transportBiddingApp").directive('map',
                     addMarker(src, $s.addressArray[i].srcLatLon, false);
                     addMarker(dest, $s.addressArray[i].destLatLon, true);
                   }
+                });
+
+                var clearMarkers = function(){
+                  if($s.markerList){
+                    for (var i = 0; i < $s.markerList.length; i++ ) {
+                        $s.markerList[i].setMap(null);
+                    }
+                  }
+                }
+
+                // TODO: really needs refactoring but works....
+                $s.$watch('bidders', function(){
+                  clearMarkers();
+                  $s.addressArrayBidders = [];
+
+                  for(var j = 0; j < $s.productData.length; j++){
+                      var item = $s.productData[j];
+                      var addToMap = false;
+                      if($s.bidders.length == 0) addToMap = true;
+                      for(var i = 0; i < $s.bidders.length; i++){
+                        if(item.bidder_name == $s.bidders[i].bidder_name
+                              && item.bidder_mobile == $s.bidders[i].bidder_mobile
+                              && item.bidder_email == $s.bidders[i].bidder_email
+                              ) {
+                                addToMap = true;
+                              break;
+                        }
+                      } 
+                      if(addToMap){
+                        $s.addressArrayBidders.push(
+                          {src: item.supply_address
+                          ,dest: item.delivery_address
+                          ,srcLatLon: item.supply_lat_lon
+                          ,destLatLon: item.delivery_lat_lon
+                        });                        
+                      }     
+                  }
+
+                  for (var i in $s.addressArrayBidders) {
+                    var src = $s.addressArrayBidders[i].src;
+                    var dest = $s.addressArrayBidders[i].dest;
+
+                    addMarker(src, $s.addressArrayBidders[i].srcLatLon, false);
+                    addMarker(dest, $s.addressArrayBidders[i].destLatLon, true);
+                  }
+
+
+
+
                 });
               }],
             link: function($s, ele, attr) {

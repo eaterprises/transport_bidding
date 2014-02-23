@@ -24,11 +24,6 @@ angular.module("transportBiddingApp")
       }); 
     };
 
-    $s.getSelectedBidders = function(bidderList) {
-      return $s.bidderList.filter(function(e) {
-        return e.isSelected == true;
-      });
-    };
 
     http.get("/api/transport_cycle").success(function(data) {
       $s.transportCycleList = data;
@@ -211,6 +206,7 @@ angular.module("transportBiddingApp")
       });
       return retval;
     }
+    
 
     $s.updateBidValue = function(row) {
       var path = [row.supply_lat_lon, row.delivery_lat_lon];
