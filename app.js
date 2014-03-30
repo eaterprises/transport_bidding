@@ -10,10 +10,115 @@ var path = require('path');
 var templatesDir = path.join(__dirname, 'templates');
 var emailTemplates = require('email-templates');
 var mailer = require('nodemailer');
+var bcrypt = require('bcrypt-nodejs');
+var passport = require('passport');
+var flash = require('connect-flash');
+
+
+require('./conf/passport')(passport); // pass passport for configuration
 
 var app = express();
 app.use(express.bodyParser());
 app.use(express.compress());
+
+// required for passport
+app.use(express.cookieParser()); // read cookies (needed for auth)
+app.use(express.session({ secret: 'ilovescotchscotchyscotchscotch' })); // session secret
+app.use(passport.initialize());
+app.use(passport.session()); // persistent login sessions
+app.use(flash());
+
+
+app.get('/admin', isLoggedIn, function(req, res) {
+  res.redirect('/#/admin');
+});
+app.get('/login', function(req, res) {
+  res.redirect('/#/login');
+});
+app.get('/logout', function(req, res) {
+  req.logout();
+  res.redirect('/');
+});
+
+function isLoggedIn(req, res, next) {
+  if (req.isAuthenticated())
+    return next();
+  res.redirect('/login');
+}
+
+app.post('/api/user/add2', function(req, res) {
+  db.User.findOne({'local.email': req.body.email}, function(err, user) {
+    if(err){
+      res.json({"status": "error", "message": err.err})
+      return;
+    }
+    if(user){
+      return res.json({"status": "fail", "message": "Email already registered"})
+    }
+    else
+    {
+      var newUser = new db.User();
+      newUser.local['email'] = req.body.email;
+      newUser.local['password'] = newUser.generateHash(req.body.password);
+      newUser.local['role'] = req.body.role;
+      newUser.local['first_name'] = req.body.first_name;
+      newUser.local['last_name'] = req.body.last_name;
+      // save the user
+      newUser.save(function(err) {
+        if (err) { 
+            res.json({"status": "error", "message": err.err})
+        }
+        return res.json({'status' : 'ok'});
+      });
+    }
+  });
+});
+app.post('/api/user/add', function(req, res, next) {
+  passport.authenticate('local-adduser', function(err, user, info) {
+    console.log(err);    
+    console.log(info);
+    if (err) { return next(err); }
+    if (!user) { return res.json({'status' : 'fail', 'message': 'Invalid credentials'}); }
+    req.logIn(user, function(err) {
+      if (err) { return next(err); }
+      return res.json({'status' : 'ok'});
+      return res.redirect('/users/' + user.username);
+    });
+  })(req, res, next);
+});
+
+app.post('/api/login', function(req, res, next) {
+  passport.authenticate('local-login', function(err, user, info) {
+    console.log(err);    
+    console.log(info);
+    if (err) { return next(err); }
+    if (!user) { return res.json({'status' : 'fail', 'message': 'Invalid credentials'}); }
+    req.logIn(user, function(err) {
+      if (err) { return next(err); }
+      return res.json({'status' : 'ok'});
+      return res.redirect('/users/' + user.username);
+    });
+  })(req, res, next);
+});
+app.get('/api/me', function(req, res) {
+  if(req.user)
+    return res.json(req.user);
+  return res.json({'message': 'not logged in'});
+
+});
+app.get('/api/logout', function(req, res) {
+  if(req.user){
+    req.logout();
+    return res.json({'status': 'ok'});
+  }
+  return res.json({'message': 'not logged in'});
+});
+
+app.get('/api/user', function(req, res) {
+  db.User.find({}, {'local.password' : false}, function(err, data) {
+    res.json(data);
+  });
+});
 
 app.get('/api/transport_cycle', function(req, res) {
   db.TransportCycle.find({}, { package_list: 0 }, function(err, data) {

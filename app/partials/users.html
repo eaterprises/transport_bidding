@@ -1,3 +1,4 @@
+<adminmenu></adminmenu>
 <h2>Users</h2>
 <div class="container">
   <div class="row-fluid">
@@ -17,24 +18,28 @@
         <thead>
           <tr>
             <th>
+              <input type="text" ng-model="search_email" class="input-medium" /><br />
               <a ng-click="setSortCol('email')">Email
                 <i ng-class="{true:'icon-chevron-up', false:'icon-chevron-down'}[isSortReverse('email')]"></i></a>
-              <br/><input type="text" ng-model="search_email" class="input-medium" />
+              
             </th>
             <th>
+              <input type="text" ng-model="search_first_name" class="input-medium" /><br />
               <a ng-click="setSortCol('first_name')">First Name
                 <i ng-class="{true:'icon-chevron-up', false:'icon-chevron-down'}[isSortReverse('first_name')]"></i></a>
-              <br/><input type="text" ng-model="search_first_name" class="input-medium" />
+              
             </th>
             <th>
+              <input type="text" ng-model="search_last_name" class="input-medium" /><br />
               <a ng-click="setSortCol('last_name')">Last Name
                 <i ng-class="{true:'icon-chevron-up', false:'icon-chevron-down'}[isSortReverse('last_name')]"></i></a>
-              <br/><input type="text" ng-model="search_last_name" class="input-medium" />
+              
             </th>
             <th>
+              <input type="text" ng-model="search_role" class="input-medium" /><br />
               <a ng-click="setSortCol('role')">Role
                 <i ng-class="{true:'icon-chevron-up', false:'icon-chevron-down'}[isSortReverse('role')]"></i></a>
-              <br/><input type="text" ng-model="search_role" class="input-medium" />
+              
             </th>
             <th>
             </th>

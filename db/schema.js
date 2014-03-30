@@ -1,6 +1,7 @@
 var mongo = require('mongoose'),
   autoIncrement = require('mongoose-auto-increment');
 var dbconf = require('../conf/dbconf.js');
+var bcrypt = require('bcrypt-nodejs');
 
 console.log('mongodb://' + dbconf.mongoUrl);
 mongo.connect('mongodb://' + dbconf.mongoUrl);
@@ -68,6 +69,37 @@ var Coordinator = new mongo.Schema({
   address_address: String
 });
 
+var User = new mongo.Schema({
+  first_name: String,
+  last_name: String,
+  username: String,
+  role: String,
+  _id: String,
+  password: String
+});
+
+var userSchema = new mongo.Schema({
+
+    local            : {
+        email        : String,
+        password     : String,
+        role         : String,
+        first_name   : String,
+        last_name    : String,
+    }
+});
+// methods ======================
+// generating a hash
+userSchema.methods.generateHash = function(password) {
+    return bcrypt.hashSync(password, bcrypt.genSaltSync(8), null);
+};
+
+// checking if password is valid
+userSchema.methods.validPassword = function(password) {
+    return bcrypt.compareSync(password, this.local.password);
+};
+
+
 TransportCycle.plugin(autoIncrement.plugin, { model: "transport_cycle",
   field: "tc_num" });
 
@@ -75,3 +107,5 @@ exports.TransportCycle = mongo.model("transport_cycle", TransportCycle);
 exports.Package = mongo.model("package", Package);
 exports.Bid = mongo.model("bid", Bid);
 exports.Coordinator = mongo.model("coordinator", Coordinator);
+exports.UserOld = mongo.model("userOld", User);
+exports.User = mongo.model("user", userSchema);

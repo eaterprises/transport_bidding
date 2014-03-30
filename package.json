@@ -12,6 +12,9 @@
     "googlemaps" : "*",
     "underscore" : "*",
     "moment" : "*",
+    "bcrypt-nodejs" : "*",
+    "passport": "*",
+    "passport-local": "*",
     "q" : "*"
   }
 }
