@@ -88,6 +88,63 @@ angular.module("transportBiddingApp")
     }
 
 
+    $s.toggleBidStatus = function(bidId, packageId, status, row) {
+      if(row.bid_status == 1)
+        row.bid_status = 2;
+      else{
+        row.bid_status = 1;
+        var affectedRows = _.filter($s.productData, function(row) {
+          return (row.package_id == packageId && row._id != bidId);
+        });
+        affectedRows.forEach(function(row){
+           row.bid_status = 2;
+        });
+
+      }
+
+    }
+    $s.saveBidStatuses = function(){
+      $s.numberToUpdate = 0;
+      // get all affirmative bids
+      var affectedRowsYes = _.filter($s.productData, function(row) {
+        return (row.bid_status != row.original_bid_status && row.bid_status == 1);
+      });
+      var updatedPackagesWithYesBids = _.map(affectedRowsYes, function(row){ return row.package_id; })
+
+      // if update a N bid after a Y bid, the Y bid will be removed
+      // so only update N bid (removal of a bid) if it has not previously been updated
+      var affectedRows = _.filter($s.productData, function(row) {
+        return (row.bid_status != row.original_bid_status 
+                  && row.bid_status == 2 
+                  && !_.contains(updatedPackagesWithYesBids, row.package_id));
+      });
+      affectedRows = _.union(affectedRows,affectedRowsYes);
+      $s.numberToUpdate = affectedRows.length;
+      $s.updatesSaved = 0;
+      if($s.numberToUpdate == 0){
+        alert("Nothing to save");
+      }
+      affectedRows.forEach(function(row){
+        if(row.original_bid_status && row.bid_status != row.original_bid_status){
+          http.post("/api/bids/" + row._id + "/package/" + row.package_id + "/status/" + row.bid_status)
+            .success(function(data) {
+            $s.updatesSaved++;
+            if($s.updatesSaved >= $s.numberToUpdate){
+              $s.getProductData();
+              alert("Update complete");
+            }
+          })
+        }
+      });
+
+    }    
+    $s.resetBidStatuses = function(){
+      $s.productData.forEach(function(item){
+          if(item.original_bid_status && item.bid_status != item.original_bid_status){
+            item.bid_status = item.original_bid_status;
+          }
+        });
+    }    
     $s.setBidStatus = function(bidId, packageId, status) {
       http.post("/api/bids/" + bidId + "/package/" + packageId + "/status/" + status)
         .success(function(data) {
@@ -147,6 +204,7 @@ angular.module("transportBiddingApp")
         $s.addressArray = [];
         for(var j = 0; j < data.length; j++){
           var bid = data[j];
+          bid.original_bid_status = bid.bid_status;
           var addArr = [];
           for (var row in data) {
             var src = data[row].supply_address;
