@@ -9,11 +9,7 @@
 </div>
 
 <map visible-path-array="bidLatLonArray" visible-path="visibleLineLineLatLon" address-array="addressArray" selected-addr-mdl="filterAddr"></map>
-<div class="transport-cycle-menu">
-  <select ng-model='transportCycle' 
-    ng-options="tc.display_text for tc in transportCycleList" 
-    ng-change="getProductData()"/>
-</div>
+
 <div class="container">
   <div class="row-fluid">
     <div class="span9">
@@ -43,7 +39,7 @@
               <a ng-click="setSortCol('reserve')">Reserve
                 <i ng-class="{true:'icon-chevron-up', false:'icon-chevron-down'}[isSortReverse('reserve')]"></i></a>
             </th>
-            <th><button ng-click="clearBids()" class="btn btn-small">Clear</button><br>Bid</th>
+            <th><button ng-click="clearBids()" class="btn btn-small">Clear bids</button><br>Bid</th>
             <th>Bid Value</th>
           </tr>
         </thead>
@@ -61,6 +57,15 @@
         </tbody>
       </table>
     </div>
+    <div class="span3">
+<div class="transport-cycle-menu">
+  <select ng-model='transportCycle' 
+    ng-options="tc.display_text for tc in transportCycleList" 
+    ng-change="getProductData()"/>
+</div>      
+        <form><button class="btn" ng-click="resetFilters()">Clear Search / Show All</button></form>
+    </div>
+
     <div class="span3 well">
       <form name="submitForm">
         <b class="muted">Name: </b><input required type="text" ng-model="bidName" hint="e.g. Jane Doe" /><br/>
@@ -68,7 +73,6 @@
         <b class="muted">Mobile: </b><input type="text" ng-model="bidMobile" /><br/>
         <b class="muted">Comments: </b><input type="text" ng-model="bidComments" /><br/>
         <input type="submit" ng-click="placeBid()" class="btn btn-success" value="Bid"/>
-        <button class="btn" ng-click="resetFilters()">Reset Filters</button>
       </form>
       <h4>Details:</h4>
       <p ng-repeat="detail in rowDetails">

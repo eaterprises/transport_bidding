@@ -6,11 +6,16 @@ angular.module("transportBiddingApp")
     $s.filterAddr = "";
     $s.isReverse = false;
 
-    http.get("/api/transport_cycle").success(function(data) {
-      $s.transportCycleList = data;
-      $s.transportCycle = data[0];
-      $s.getProductData(); 
-    });
+    $s.getTransportCycles = function(){
+      http.get("/api/transport_cycle/active").success(function(data) {
+        $s.transportCycleList = data;
+        $s.transportCycle = data[0];
+        $s.getProductData(); 
+      });
+    };
+
+
+    $s.getTransportCycles();
     //make more generic @todo
     $s.filterProducts = function(item) {
       var isMatch = true;
@@ -64,7 +69,10 @@ angular.module("transportBiddingApp")
           addArr.push({src: src, dest: dest, srcLatLon: srcLatLon,
             destLatLon: destLatLon});
         }
-
+        if(data.length == 0){
+          alert("No data. Transport Cycle may have been deleted. Refreshing transport cycles...");
+          $s.getTransportCycles();
+        }
         $s.addressArray = addArr;
       });
     };
@@ -129,8 +137,8 @@ angular.module("transportBiddingApp")
         });
       }
     };
-
     $s.resetFilters = function() {
+      $s.search_product = $s.search_bidder_name = $s.search_bidder_email = $s.search_src = $s.search_dest = "";
       $s.filterAddr = "";
       delete $s.visibleLineLineLatLon;
     };

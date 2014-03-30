@@ -7,26 +7,28 @@ angular.module("transportBiddingApp")
     $s.isReverse = false;
     $s.showAccepted = false;
 
-    $s.filterAccepted = function(){
-      $s.getProductData();
+    $s.noBidUser =   {
+          "bidder_name": "No bid",
+          "bidder_email": "",
+          "bidder_mobile": ""
+        };
+        
+    $s.showNoBids = function(){
+      $s.bidderList[0].isSelected = true;
+      $s.getSelectedBidders($s.bidderList);
     }
     $s.updateBidders = function(tc_id) {
       http.get("/api/bidders/" + tc_id).success(function(data) {
+        data.unshift($s.noBidUser);
         $s.bidderList = data;
       }); 
     };
 
-    $s.getSelectedBidders = function(bidderList) {
-      return $s.bidderList.filter(function(e) {
-        return e.isSelected == true;
-      });
-    };
 
     http.get("/api/transport_cycle").success(function(data) {
       $s.transportCycleList = data;
       $s.transportCycle = data[0];
       $s.getProductData(); 
-      $s.getPackagesWithNoBids();
       $s.updateBidders($s.transportCycle._id); 
     });
     //make more generic @todo
@@ -65,6 +67,26 @@ angular.module("transportBiddingApp")
 
       return isMatch;
     }
+    $s.filterAccepted = function(item){
+      if($s.showAccepted)
+        return (item && item.bid_status && item.bid_status == 1);
+      return true;
+    }
+    $s.filterBidder = function(item){
+      // $s.bidders      
+      if($s.bidders.length == 0) return true;
+      for(var i = 0; i < $s.bidders.length; i++){
+         if(item.bidder_name == $s.bidders[i].bidder_name
+                  && item.bidder_mobile == $s.bidders[i].bidder_mobile
+                  && item.bidder_email == $s.bidders[i].bidder_email
+                  ) {
+                  return true; 
+                  break;
+                }
+              }      
+      return false;
+    }
+
 
     $s.setBidStatus = function(bidId, packageId, status) {
       http.post("/api/bids/" + bidId + "/package/" + packageId + "/status/" + status)
@@ -89,6 +111,24 @@ angular.module("transportBiddingApp")
     $s.getPackagesWithNoBids = function(){
       http.get("/api/transport_cycle/no_bids/" + $s.transportCycle._id).success(function(data) {
         $s.number_no_bid_items = data.length;
+        for(var j = 0; j < data.length; j++){
+          var bid = data[j];
+          ["bidder_name","bidder_email","bidder_mobile"].forEach(function(item){
+            bid[item] = $s.noBidUser[item];
+          });
+          bid.nobid = true;
+
+          var addArr = [];
+          for (var row in data) {
+            var src = data[row].supply_address;
+            var dest = data[row].delivery_address;
+            var srcLatLon = data[row].supply_lat_lon;
+            var destLatLon = data[row].delivery_lat_lon;
+            $s.addressArray.push({src: src, dest: dest, srcLatLon: srcLatLon,
+              destLatLon: destLatLon});
+          }
+          $s.productData.push(bid);
+        }
       });
     }
     $s.getSelectedBidders = function(bidderList){
@@ -99,48 +139,26 @@ angular.module("transportBiddingApp")
           $s.bidders.push(bidder);
         }
       }
-      $s.getProductData();
+      // $s.getProductData();
     }
     $s.getProductData = function() {
-      var bidders = '';
-
       http.get("/api/bids/" + $s.transportCycle._id).success(function(data) {
         $s.productData = [];
+        $s.addressArray = [];
         for(var j = 0; j < data.length; j++){
           var bid = data[j];
-          
-          var validBidder = true;
-
-          if($s.bidders.length > 0) validBidder = false;
-          for(var i = 0; i < $s.bidders.length; i++){
-            if(bid.bidder_name == $s.bidders[i].bidder_name
-              && bid.bidder_mobile == $s.bidders[i].bidder_mobile
-              && bid.bidder_email == $s.bidders[i].bidder_email
-              ) {
-              validBidder = true; 
-              break;
-            }
-          }
-          if($s.showAccepted){
-            validBidder = false;
-            if(bid.bid_status == 1) validBidder = true;
-          }
-
-          if(!validBidder) continue;
           var addArr = [];
-
           for (var row in data) {
             var src = data[row].supply_address;
             var dest = data[row].delivery_address;
             var srcLatLon = data[row].supply_lat_lon;
             var destLatLon = data[row].delivery_lat_lon;
-
-            addArr.push({src: src, dest: dest, srcLatLon: srcLatLon,
+            $s.addressArray.push({src: src, dest: dest, srcLatLon: srcLatLon,
               destLatLon: destLatLon});
           }
           $s.productData.push(bid);
         }
-        $s.addressArray = addArr;
+        $s.getPackagesWithNoBids();
       });
     };
 
@@ -188,6 +206,7 @@ angular.module("transportBiddingApp")
       });
       return retval;
     }
+    
 
     $s.updateBidValue = function(row) {
       var path = [row.supply_lat_lon, row.delivery_lat_lon];
@@ -206,10 +225,19 @@ angular.module("transportBiddingApp")
     };
 
     $s.resetFilters = function() {
+      $s.search_product = $s.search_bidder_name = $s.search_bidder_email = $s.search_src = $s.search_dest = "";
+      $s.clearSelectedBidders();
+      $s.showAccepted = false;
       $s.filterAddr = "";
       delete $s.visibleLineLineLatLon;
+      $s.getProductData();
     };
-
+    $s.clearSelectedBidders = function(){
+      $s.bidders = [];
+      $s.bidderList.forEach(function(e) {
+        e.isSelected = false;
+      });
+    }
     $s.clearBids = function() {
       $s.bidLatLonArray = [];
 
