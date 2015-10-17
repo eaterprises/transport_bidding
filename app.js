@@ -13,17 +13,21 @@ var mailer = require('nodemailer');
 var bcrypt = require('bcrypt-nodejs');
 var passport = require('passport');
 var flash = require('connect-flash');
+var bodyParser = require('body-parser');
+var compression = require('compression');
+var cookieParser = require('cookie-parser');
+var cookieSession = require('cookie-session');
 
 
 require('./conf/passport')(passport); // pass passport for configuration
 
 var app = express();
-app.use(express.bodyParser());
-app.use(express.compress());
+app.use(bodyParser());
+app.use(compression());
 
 // required for passport
-app.use(express.cookieParser()); // read cookies (needed for auth)
-app.use(express.session({ secret: 'ilovescotchscotchyscotchscotch' })); // session secret
+app.use(cookieParser()); // read cookies (needed for auth)
+app.use(cookieSession({ secret: 'ilovescotchscotchyscotchscotch' })); // session secret
 app.use(passport.initialize());
 app.use(passport.session()); // persistent login sessions
 app.use(flash());

@@ -4,8 +4,12 @@
   "private": true,
   "dependencies": {
     "express":"*",
+    "body-parser":"*",
+    "compression":"*",
+    "cookie-parser":"*",
+    "cookie-session":"*",
     "mongoose": "*",
-    "mongoose-auto-increment": "*",
+    "mongoose-auto-increment": "git://github.com/vlapo/mongoose-auto-increment.git#5de1117957156f14461db86472ffba7234537846",
     "csv": "*",
     "nodemailer": "*",
     "email-templates" : "*",
