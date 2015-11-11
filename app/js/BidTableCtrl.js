@@ -5,6 +5,17 @@ angular.module("transportBiddingApp")
     $s.bidLatLonArray = [];
     $s.filterAddr = "";
     $s.isReverse = false;
+
+    $s.getTransportCycles = function(){
+      http.get("/api/transport_cycle/active").success(function(data) {
+        $s.transportCycleList = data;
+        $s.transportCycle = data[0];
+        $s.getProductData(); 
+      });
+    };
+
+
+    $s.getTransportCycles();
     //make more generic @todo
     $s.filterProducts = function(item) {
       var isMatch = true;
@@ -19,14 +30,14 @@ angular.module("transportBiddingApp")
               && $s.search_src != "") {
         var regex = new RegExp($s.search_src, "i")
 
-        isMatch = isMatch && regex.test(item.supplier.address.suburb);
+        isMatch = isMatch && regex.test(item.supplier_suburb);
       }
 
       if (typeof $s.search_dest != "undefined"
               && $s.search_dest != "") {
         var regex = new RegExp($s.search_dest, "i")
 
-        isMatch = isMatch && regex.test(item.distributor.address.suburb);
+        isMatch = isMatch && regex.test(item.distributor_suburb);
       }
 
       return isMatch;
@@ -45,7 +56,7 @@ angular.module("transportBiddingApp")
     $s.productData = {};
 
     $s.getProductData = function() {
-      http.get("/api/products").success(function(data) {
+      http.get("/api/products/" + $s.transportCycle._id + "/true").success(function(data) {
         $s.productData = data;
         var addArr = [];
 
@@ -58,7 +69,10 @@ angular.module("transportBiddingApp")
           addArr.push({src: src, dest: dest, srcLatLon: srcLatLon,
             destLatLon: destLatLon});
         }
-
+        if(data.length == 0){
+          alert("No data. Transport Cycle may have been deleted. Refreshing transport cycles...");
+          $s.getTransportCycles();
+        }
         $s.addressArray = addArr;
       });
     };
@@ -102,7 +116,7 @@ angular.module("transportBiddingApp")
     };
 
     $s.getBids = function() {
-      var retval = $s.csvData.data.filter(function(e) {
+      var retval = $s.productData.filter(function(e) {
         return e.hasBid;
       });
       return retval;
@@ -123,8 +137,8 @@ angular.module("transportBiddingApp")
         });
       }
     };
-
     $s.resetFilters = function() {
+      $s.search_product = $s.search_bidder_name = $s.search_bidder_email = $s.search_src = $s.search_dest = "";
       $s.filterAddr = "";
       delete $s.visibleLineLineLatLon;
     };
@@ -137,9 +151,28 @@ angular.module("transportBiddingApp")
           e.hasBid = false;
         }
       });
-    }
+    };
 
-    $s.sendEmail = function() {
+    $s.placeBid = function() {
+      var postData = [];
+      var bids = $s.getBids();
+      bids.forEach(function(e) {
+        postData.push({
+          package_id: e._id,
+          bidder_name: $s.bidName,
+          bidder_email: $s.bidEmail,
+          bidder_mobile: $s.bidMobile,
+          comments: $s.bidComments,
+          value: e.bidValue
+        });
+      });
+
+      http.post('/api/bid', postData).success(function(data) {
+        alert("Bids successfully placed.");
+      });
+    };
+
+    /* $s.sendEmail = function() {
       var postData = {};
       postData.customer = {name: $s.customerName,
         email: $s.customerEmail};
@@ -151,7 +184,7 @@ angular.module("transportBiddingApp")
         $s.emailOpen = true;
         $s.emailData = data;
       });
-    };
+    }; */
 
     $s.isSortReverse = function(index) {
       return $s.sortReverse[index];

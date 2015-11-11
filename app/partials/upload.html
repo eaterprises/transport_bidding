@@ -1,0 +1,16 @@
+<adminmenu></adminmenu>
+
+<form action="/api/uploadcsv" method="post"
+      enctype="multipart/form-data">
+  Coordinator Id: 
+  <select ng-model='coordinator' name="coordinator_id" required>
+    <option value="">-- choose a coordinator --</option>
+    <option ng-repeat="obj in coordinatorList" value="{{obj._id}}"> {{obj.organisation}} : {{obj.first_name}} {{obj.last_name}}</option>    
+  </select>
+
+    <br>
+    Cycle Start: <input type="date" name="start_date"><br>
+    Cycle Finish: <input type="date" name="end_date"><br>
+    CSV: <input type="file" name="transportcsv"><br>
+    <input type="submit" value="Submit">
+</form>

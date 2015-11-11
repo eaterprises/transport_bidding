@@ -1,124 +1,431 @@
 var db = require('./db/schema');
 var express = require('express');
 var fs = require('fs');
+var moment = require('moment');
 var q = require('q');
+var _ = require('underscore');
 var csv = require('csv');
+var mapTools = require('./app_modules/map-tools');
 var path = require('path');
-var maps = require('googlemaps');
 var templatesDir = path.join(__dirname, 'templates');
 var emailTemplates = require('email-templates');
 var mailer = require('nodemailer');
+var bcrypt = require('bcrypt-nodejs');
+var passport = require('passport');
+var flash = require('connect-flash');
+var bodyParser = require('body-parser');
+var compression = require('compression');
+var cookieParser = require('cookie-parser');
+var cookieSession = require('cookie-session');
+
+
+require('./conf/passport')(passport); // pass passport for configuration
 
 var app = express();
-app.use(express.bodyParser());
-app.use(express.compress());
+app.use(bodyParser());
+app.use(compression());
 
-app.get('/api/products', function(req, res) {
-  db.Product.find({}, function(err, data) {
+// required for passport
+app.use(cookieParser()); // read cookies (needed for auth)
+app.use(cookieSession({ secret: 'ilovescotchscotchyscotchscotch' })); // session secret
+app.use(passport.initialize());
+app.use(passport.session()); // persistent login sessions
+app.use(flash());
+
+
+app.get('/admin', isLoggedIn, function(req, res) {
+  res.redirect('/#/admin');
+});
+app.get('/login', function(req, res) {
+  res.redirect('/#/login');
+});
+app.get('/logout', function(req, res) {
+  req.logout();
+  res.redirect('/');
+});
+
+function isLoggedIn(req, res, next) {
+  if (req.isAuthenticated())
+    return next();
+  res.redirect('/login');
+}
+
+app.post('/api/user/add2', function(req, res) {
+  db.User.findOne({'local.email': req.body.email}, function(err, user) {
+    if(err){
+      res.json({"status": "error", "message": err.err})
+      return;
+    }
+    if(user){
+      return res.json({"status": "fail", "message": "Email already registered"})
+    }
+    else
+    {
+      var newUser = new db.User();
+      newUser.local['email'] = req.body.email;
+      newUser.local['password'] = newUser.generateHash(req.body.password);
+      newUser.local['role'] = req.body.role;
+      newUser.local['first_name'] = req.body.first_name;
+      newUser.local['last_name'] = req.body.last_name;
+      // save the user
+      newUser.save(function(err) {
+        if (err) { 
+            res.json({"status": "error", "message": err.err})
+        }
+        return res.json({'status' : 'ok'});
+      });
+    }
+  });
+});
+app.post('/api/user/add', function(req, res, next) {
+  passport.authenticate('local-adduser', function(err, user, info) {
+    console.log(err);    
+    console.log(info);
+    if (err) { return next(err); }
+    if (!user) { return res.json({'status' : 'fail', 'message': 'Invalid credentials'}); }
+    req.logIn(user, function(err) {
+      if (err) { return next(err); }
+      return res.json({'status' : 'ok'});
+      return res.redirect('/users/' + user.username);
+    });
+  })(req, res, next);
+});
+
+app.post('/api/login', function(req, res, next) {
+  passport.authenticate('local-login', function(err, user, info) {
+    console.log(err);    
+    console.log(info);
+    if (err) { return next(err); }
+    if (!user) { return res.json({'status' : 'fail', 'message': 'Invalid credentials'}); }
+    req.logIn(user, function(err) {
+      if (err) { return next(err); }
+      return res.json({'status' : 'ok'});
+      return res.redirect('/users/' + user.username);
+    });
+  })(req, res, next);
+});
+app.get('/api/me', function(req, res) {
+  if(req.user)
+    return res.json(req.user);
+  return res.json({'message': 'not logged in'});
+
+});
+app.get('/api/logout', function(req, res) {
+  if(req.user){
+    req.logout();
+    return res.json({'status': 'ok'});
+  }
+  return res.json({'message': 'not logged in'});
+});
+
+app.get('/api/user', function(req, res) {
+  db.User.find({}, {'local.password' : false}, function(err, data) {
     res.json(data);
   });
 });
 
-app.post('/api/uploadcsv', function(req, res) {
-  db.Product.find({}).remove();
-  var tempCsvPath = req.files.transportcsv.path;
-  var csvDataMapping = ["oc_num", "supplier.name", "supply_address",
-    "supplier.address.street", "supplier.address.suburb",
-    "supplier.address.postcode", "product_name", "variant", "variant_weight",
-    "quantity", "reserve", "distributor.name", "delivery_address",
-    "distributor.address.street", "distributor.address.suburb",
-    "distributor.address.postcode", "shipping_instructions"];
-
-  var locations = {};
-  var counter = 0;
-  var getLatLon = function(address, callback) {
-    if (address in locations)
-      callback(locations[address]);
-    else {
-      maps.geocode(address, function(err, data) {
-        if (typeof data !== 'undefined') {
-          var loc = data.results[0]['geometry']['location'];
-          locations[address] = loc;
-          console.log(loc);
-          callback(loc);
+app.get('/api/transport_cycle', function(req, res) {
+  db.TransportCycle.find({}, { package_list: 0 }, function(err, data) {
+    var retval = [];
+    var coordIdList = _.map(data, function(val) {
+      return val.transport_cycle_coordinator_id;
+    });
+    
+    db.Coordinator.find({ _id: { $in: coordIdList } },
+      { organisation: 1, _id: 1 }, function(err, tcList) {
+        if(data){
+          data.forEach(function(e) {
+            var tc = tcList.filter(function(tcData) {
+              return tcData._id == e.transport_cycle_coordinator_id 
+            });
+                
+            var text = "TC" + e.tc_num + " " + tc[0].organisation + " " + 
+              moment(e.end_date).format("D-MM-YYYY");
+              
+            retval.push({ 
+              display_text: text,
+              _id: e._id
+            });
+          });
         }
+        res.json(retval);
+      }
+    );
+  });
+});
+
+app.get('/api/transport_cycle/active', function(req, res) {
+  db.TransportCycle.find({is_active: true}, { package_list: 0 }, function(err, data) {
+    var retval = [];
+    var coordIdList = _.map(data, function(val) {
+      return val.transport_cycle_coordinator_id;
+    });
+    
+    db.Coordinator.find({ _id: { $in: coordIdList } },
+      { organisation: 1, _id: 1 }, function(err, tcList) {
+        if(data){
+          data.forEach(function(e) {
+            var tc = tcList.filter(function(tcData) {
+              return tcData._id == e.transport_cycle_coordinator_id 
+            });
+                
+            var text = "TC" + e.tc_num + " " + tc[0].organisation + " " + 
+              moment(e.end_date).format("D-MM-YYYY");
+              
+            retval.push({ 
+              display_text: text,
+              _id: e._id
+            });
+          });
+        }
+        res.json(retval);
+      }
+    );
+  });
+});
+
+app.post("/api/bids/:bid_id/package/:package_id/status/:bid_status", function(req, res) {
+  console.log(req.params);
+  db.Bid.update({ package_id: req.params.package_id }, { bid_status: 2 }, { multi: true },
+    function() {
+      if (req.params.bid_status == 1) 
+        db.Bid.update({ _id: req.params.bid_id }, { bid_status: 1 }, {},
+        function() {
+          res.send(200);
+        });
+      else res.send(200);
+    });
+});
+
+app.get('/api/bidders/:tc_id', function(req, res) {
+  var retval = {};
+
+  db.TransportCycle.findOne({ _id: req.params.tc_id }, { 'package_list._id': 1 }, 
+    function(err, data) {
+      var idList = [];
+      data.package_list.forEach(function(e) {
+        idList.push(e._id);
+      });
+
+      db.Bid.find({ package_id: { $in: idList } }, 
+        { bidder_name: 1, bidder_email: 1, bidder_mobile: 1, _id: 0 }, function(err, data) {
+        data.forEach(function(e) {
+          if (typeof e.bidder_email !== 'undefined' && 
+            !(e.bidder_email in retval)) {
+            retval[e.bidder_email.toLowerCase()] = e;
+          }
+        });
+
+        res.json(_.values(retval));
       });
     }
-  }
+  );
+});
 
-  var isNumeric = function(str) {
-    return !isNaN(parseFloat(str)) && isFinite(str);
-  };
+app.get('/api/transport_cycle/all', function(req, res) {
+  // better way to find coordinator names? not sure if want to merge into /api/transport_cycle or not
+  db.TransportCycle.find().distinct('transport_cycle_coordinator_id', function(error, coordinator_ids) {
+    db.Coordinator.find({ $or: coordinator_ids.map(function(id){ if(typeof(id) === "undefined") return {_id: ''}; return {_id: id}}) },  function(error, coordinators_raw) {
+      var coordinators = {};
+      if(typeof(coordinators_raw) !== "undefined" && coordinators_raw != null ){
+        coordinators_raw.forEach(function(e){
+          e.display_name = 
+              (typeof e['organisation'] != "undefined" ? e['organisation'] : "") + ": " +
+              (typeof e['first_name'] != "undefined" ? e['first_name'] : "") + " " + 
+              (typeof e['last_name'] != "undefined" ? e['last_name'] : "") + 
+              "";
+          coordinators[e._id] = e;
+        });
+      } 
 
-  var addValueToObj = function(data, mapping, val) {
-    if (mapping.indexOf(".") > 0) {
-      var attrList = mapping.split(".");
-      var tmpObj = data;
-
-      for (var x = 0; x < attrList.length; x++) {
-        var attr = attrList[x];
-
-        if (x === (attrList.length - 1))
-          tmpObj[attr] = val;
-        else if (typeof tmpObj[attr] == 'undefined') {
-          tmpObj[attr] = {};
-        }
-
-        tmpObj = tmpObj[attr];
+      db.TransportCycle.find({}, { package_list: 0 }, function(err, data) {
+        var retval = [];
+        data.forEach(function(e) {      
+          var text = "TC" + e.tc_num + " " + moment(e.end_date).format("D-MM-YYYY");
+          var coordinator_text = '';
+          if(coordinators[e.transport_cycle_coordinator_id])
+            coordinator_text = coordinators[e.transport_cycle_coordinator_id].display_name;
+          retval.push({ 
+            display_text: text,
+            coordinator_text: coordinator_text,
+            start_date: e.start_date,
+            end_date: e.end_date,
+            is_active: e.is_active,
+            display_text: text,
+            _id: e._id
+          });
+        });
+        res.json(retval);
+      });
+    });  
+  });  
+});
+app.post('/api/transport_cycle/edit', function(req, res) {
+    db.TransportCycle.findOne({ _id: req.body.transport_cycle.id }, function(err, data) {
+      if(err || data == null) {
+        res.send('');
+        return;
       }
-    } else {
-      data[mapping] = val;
-    }
+      data.is_active = req.body.transport_cycle.active;
+      data.save(function(err) {
+          if (err) {
+            console.log(err);
+          }
+          res.json({"status":"ok"});
+      });
+    });
+});
 
-    return data;
-  };
+app.get('/api/products/:id', function(req, res) {
+  db.TransportCycle.findOne({ _id: req.params.id }, function(err, data) {
+    if (data === null) res.send('');
+    else res.json(data.package_list);
+  });
+});
+app.get('/api/products/:id/:status', function(req, res) {
+  db.TransportCycle.findOne({ _id: req.params.id, is_active: req.params.status}, function(err, data) {
+    if (data === null) res.send('');
+    else res.json(data.package_list);
+  });
+});
+app.get('/api/transport_cycle/no_bids/:id', function(req, res) {
+  db.TransportCycle.findOne({ _id: req.params.id }, function(err, data) {
+    if (data === null) res.send('');
+    else {
+      var package_ids = [];
+      var package_id_mapping = [];
+      var all_bids = [];
+      data.package_list.forEach(function(e) {
+        package_ids.push({"package_id":e._id});
+        package_id_mapping[e._id] = e;
+      });
+      db.Bid.find({ $or: package_ids}, function(error, bids) {
+          for(var i = 0; i < bids.length; i++){
+            delete(package_id_mapping[bids[i].package_id]);
+          }
+          var no_bid_list = [];
+          for(var f in package_id_mapping)
+            no_bid_list.push(package_id_mapping[f]);
+          res.json(no_bid_list);
+      });      
+    }
+  });
+});
+
+app.get('/api/bids/:id', function(req, res) {
+  db.TransportCycle.findOne({ _id: req.params.id }, function(err, data) {
+    if (data === null) res.send('');
+    else {
+      var package_ids = [];
+      var package_id_mapping = [];
+      var all_bids = [];
+      data.package_list.forEach(function(e) {
+        package_ids.push({"package_id":e._id});
+        package_id_mapping[e._id] = e;
+      });
+      db.Bid.find({ $or: package_ids}, function(error, bids) {
+          for(var i = 0; i < bids.length; i++){
+            var package_data = package_id_mapping[bids[i].package_id];
+            var current_bid = {};
+            for(var field in ["supplier_name","supply_address","supplier_suburb","supplier_postcode","product_name","variant","variant_weight","quantity","reserve","distributor_name","delivery_address","distributor_suburb","distributor_postcode","shipping_instructions","is_active","delivery_lat_lon","supply_lat_lon","timestamp"]){
+              bids[i][field] = package_data[field];
+            }
+            var fields = [];
+            fields = ["package_id","bidder_name","bidder_email","bidder_mobile","comments","value","_id","__v","bid_status","ts"];
+            for(var j = 0; j < fields.length; j++){
+              var field = fields[j];
+              current_bid[field] = bids[i][field];
+            }
+            fields = ["supplier_name","supply_address","supplier_suburb","supplier_postcode","product_name","variant","variant_weight","quantity","reserve","distributor_name","delivery_address","distributor_suburb","distributor_postcode","shipping_instructions","is_active","delivery_lat_lon","supply_lat_lon","timestamp"];
+            for(var j = 0; j < fields.length; j++){
+              var field = fields[j];
+              bids[i][field] = package_data[field];
+              current_bid[field] = package_data[field];
+            }
+            all_bids.push(current_bid);
+          }
+          res.json(all_bids);
+      });      
+    }
+  });
+});
+
+app.post('/api/uploadcsv', function(req, res) {
+  var mapInterface = new mapTools.MapInterface();
+  var packages = [];
+
+  var tempCsvPath = req.files.transportcsv.path;
+  var csvDataMapping = ["supplier_name", "supply_address",
+    "supplier_street", "supplier_suburb",
+    "supplier_postcode", "product_name", "variant", "variant_weight",
+    "quantity", "reserve", "distributor_name", "delivery_address",
+    "distributor_street", "distributor_suburb",
+    "distributor_postcode", "shipping_instructions"];
 
   var callStack = [];
   var pushToCallstack = function(model, addressAttr, latLngAttr) {
     callStack.push(function() {
-      getLatLon(model[addressAttr], function(data) {
-        if (data !== false) {
-          model[latLngAttr] = {lat: data.lat, lon: data.lng};
-        }
-
-        model.save(function(err) {
-          if (err)
-            console.log(err);
-        });
+      return mapInterface.getLatLon(model[addressAttr]).then(function(resolved) {
+	model[latLngAttr] = resolved.latLon;
       });
     });
-  }
-
+  };
   csv().from.stream(fs.createReadStream(tempCsvPath, "utf8"))
           .on('record', function(row, index) {
     if (index === 0) {
       //do nothing with header in csv file
     } else {
-      var data = new db.Product();
+      var data = new db.Package();
+      
       for (var i = 0; i < row.length; i++) {
-        var val = isNumeric(row[i]) ? parseFloat(row[i]) : row[i];
+        var val = _.isNumber(row[i]) ? parseFloat(row[i]) : row[i];
         var mapping = csvDataMapping[i];
-        data = addValueToObj(data, mapping, val);
+        data[mapping] = val;
       }
-
-      pushToCallstack(data, "supply_address", "supply_lat_lon");
-      pushToCallstack(data, "delivery_address", "delivery_lat_lon");
+      
+      var pIdx = packages.push(data) - 1;
+      
+      pushToCallstack(packages[pIdx], "supply_address", "supply_lat_lon");
+      pushToCallstack(packages[pIdx], "delivery_address", "delivery_lat_lon");
     }
   }).on('close', function(count) {
     console.log("finished");
   }).on('error', function(err) {
     console.log(err);
   }).to(function() {
-    while (callStack.length > 0) {
-      setTimeout(callStack.shift(), 650 * counter++);
-    }
-    setTimeout(function() {
-      db.Product.count({}, function(err, c) {
-        console.log(c);
-      });
-      res.send(200);
-    }, 650 * counter++);
+    var shiftThenRun = function(stack) {
+      if (stack.length > 0) { 
+        (stack.shift())().then(function() {
+          shiftThenRun(stack);
+        });
+      } else {
+        var transCycle = new db.TransportCycle({
+	  package_list: packages,
+          start_date: req.body.start_date,
+          end_date: req.body.end_date,
+          transport_cycle_coordinator_id: req.body.coordinator_id
+        });
+      
+        transCycle.save(function(err) {
+          if (err) console.log(err);
+          res.send(200);
+	});
+      }
+    };
+    
+    shiftThenRun(callStack);
   });
+});
+
+app.post('/api/bid', function(req, res) {
+  req.body.forEach(function(e) {
+    var bid = new db.Bid(e);
+    bid.save(function(err) {
+      if (err) console.log(err);
+    });
+  });
+  
+  res.send(200);
 });
 
 app.post('/api/sendemail', function(req, res) {
@@ -153,11 +460,38 @@ app.post('/api/sendemail', function(req, res) {
   });
 });
 
+
+
+app.get('/api/coordinators', function(req, res) {
+  db.Coordinator.find({}, function(err, data) {
+    res.json(data);
+  });
+});
+app.post('/api/coordinator/new', function(req, res) {
+    var data = new db.Coordinator();
+    data['organisation'] = req.body.user['organisation'];
+    data['first_name'] = req.body.user['first_name'];
+    data['last_name'] = req.body.user['last_name'];
+    data['email'] = req.body.user['email'];
+    data['mobile'] = req.body.user['mobile'];
+    data['landline'] = req.body.user['landline'];
+    data['email'] = req.body.user['email'];
+    data['address_street'] = req.body.user['address_street'];
+    data['address_suburb'] = req.body.user['address_suburb'];
+    data['address_postcode'] = req.body.user['address_postcode'];
+    data.save(function(err) {      
+        if (err) {
+          console.log(err);
+          res.json({"status": "error"})
+        }
+      res.json({"status":"ok"});
+    });
+});
 app.get('/*', function(req, res) {
   res.sendfile(__dirname + "/app" + req.path);
 });
 
-var port = process.env.PORT || 8888;
+var port = process.env.PORT || 8000;
 app.listen(port, function() {
   console.log("Listening on " + port);
 });

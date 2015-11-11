@@ -3,12 +3,23 @@
   "version" : "0.0.1",
   "private": true,
   "dependencies": {
-    "express":"3.x",
+    "express":"*",
+    "body-parser":"*",
+    "compression":"*",
+    "cookie-parser":"*",
+    "cookie-session":"*",
     "mongoose": "*",
+    "mongoose-auto-increment": "git://github.com/vlapo/mongoose-auto-increment.git#5de1117957156f14461db86472ffba7234537846",
     "csv": "*",
     "nodemailer": "*",
     "email-templates" : "*",
     "googlemaps" : "*",
+    "underscore" : "*",
+    "moment" : "*",
+    "bcrypt-nodejs" : "*",
+    "passport": "*",
+    "passport-local": "*",
+    "connect-flash": "*",
     "q" : "*"
   }
 }
