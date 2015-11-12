@@ -69,7 +69,7 @@ app.post('/api/user/add2', function(req, res) {
       newUser.local['last_name'] = req.body.last_name;
       // save the user
       newUser.save(function(err) {
-        if (err) { 
+        if (err) {
             res.json({"status": "error", "message": err.err})
         }
         return res.json({'status' : 'ok'});
@@ -79,7 +79,7 @@ app.post('/api/user/add2', function(req, res) {
 });
 app.post('/api/user/add', function(req, res, next) {
   passport.authenticate('local-adduser', function(err, user, info) {
-    console.log(err);    
+    console.log(err);
     console.log(info);
     if (err) { return next(err); }
     if (!user) { return res.json({'status' : 'fail', 'message': 'Invalid credentials'}); }
@@ -93,7 +93,7 @@ app.post('/api/user/add', function(req, res, next) {
 
 app.post('/api/login', function(req, res, next) {
   passport.authenticate('local-login', function(err, user, info) {
-    console.log(err);    
+    console.log(err);
     console.log(info);
     if (err) { return next(err); }
     if (!user) { return res.json({'status' : 'fail', 'message': 'Invalid credentials'}); }
@@ -130,19 +130,19 @@ app.get('/api/transport_cycle', function(req, res) {
     var coordIdList = _.map(data, function(val) {
       return val.transport_cycle_coordinator_id;
     });
-    
+
     db.Coordinator.find({ _id: { $in: coordIdList } },
       { organisation: 1, _id: 1 }, function(err, tcList) {
         if(data){
           data.forEach(function(e) {
             var tc = tcList.filter(function(tcData) {
-              return tcData._id == e.transport_cycle_coordinator_id 
+              return tcData._id == e.transport_cycle_coordinator_id
             });
-                
-            var text = "TC" + e.tc_num + " " + tc[0].organisation + " " + 
+
+            var text = "TC" + e.tc_num + " " + tc[0].organisation + " " +
               moment(e.end_date).format("D-MM-YYYY");
-              
-            retval.push({ 
+
+            retval.push({
               display_text: text,
               _id: e._id
             });
@@ -160,19 +160,19 @@ app.get('/api/transport_cycle/active', function(req, res) {
     var coordIdList = _.map(data, function(val) {
       return val.transport_cycle_coordinator_id;
     });
-    
+
     db.Coordinator.find({ _id: { $in: coordIdList } },
       { organisation: 1, _id: 1 }, function(err, tcList) {
         if(data){
           data.forEach(function(e) {
             var tc = tcList.filter(function(tcData) {
-              return tcData._id == e.transport_cycle_coordinator_id 
+              return tcData._id == e.transport_cycle_coordinator_id
             });
-                
-            var text = "TC" + e.tc_num + " " + tc[0].organisation + " " + 
+
+            var text = "TC" + e.tc_num + " " + tc[0].organisation + " " +
               moment(e.end_date).format("D-MM-YYYY");
-              
-            retval.push({ 
+
+            retval.push({
               display_text: text,
               _id: e._id
             });
@@ -188,7 +188,7 @@ app.post("/api/bids/:bid_id/package/:package_id/status/:bid_status", function(re
   console.log(req.params);
   db.Bid.update({ package_id: req.params.package_id }, { bid_status: 2 }, { multi: true },
     function() {
-      if (req.params.bid_status == 1) 
+      if (req.params.bid_status == 1)
         db.Bid.update({ _id: req.params.bid_id }, { bid_status: 1 }, {},
         function() {
           res.send(200);
@@ -200,17 +200,17 @@ app.post("/api/bids/:bid_id/package/:package_id/status/:bid_status", function(re
 app.get('/api/bidders/:tc_id', function(req, res) {
   var retval = {};
 
-  db.TransportCycle.findOne({ _id: req.params.tc_id }, { 'package_list._id': 1 }, 
+  db.TransportCycle.findOne({ _id: req.params.tc_id }, { 'package_list._id': 1 },
     function(err, data) {
       var idList = [];
       data.package_list.forEach(function(e) {
         idList.push(e._id);
       });
 
-      db.Bid.find({ package_id: { $in: idList } }, 
+      db.Bid.find({ package_id: { $in: idList } },
         { bidder_name: 1, bidder_email: 1, bidder_mobile: 1, _id: 0 }, function(err, data) {
         data.forEach(function(e) {
-          if (typeof e.bidder_email !== 'undefined' && 
+          if (typeof e.bidder_email !== 'undefined' &&
             !(e.bidder_email in retval)) {
             retval[e.bidder_email.toLowerCase()] = e;
           }
@@ -229,23 +229,23 @@ app.get('/api/transport_cycle/all', function(req, res) {
       var coordinators = {};
       if(typeof(coordinators_raw) !== "undefined" && coordinators_raw != null ){
         coordinators_raw.forEach(function(e){
-          e.display_name = 
+          e.display_name =
               (typeof e['organisation'] != "undefined" ? e['organisation'] : "") + ": " +
-              (typeof e['first_name'] != "undefined" ? e['first_name'] : "") + " " + 
-              (typeof e['last_name'] != "undefined" ? e['last_name'] : "") + 
+              (typeof e['first_name'] != "undefined" ? e['first_name'] : "") + " " +
+              (typeof e['last_name'] != "undefined" ? e['last_name'] : "") +
               "";
           coordinators[e._id] = e;
         });
-      } 
+      }
 
       db.TransportCycle.find({}, { package_list: 0 }, function(err, data) {
         var retval = [];
-        data.forEach(function(e) {      
+        data.forEach(function(e) {
           var text = "TC" + e.tc_num + " " + moment(e.end_date).format("D-MM-YYYY");
           var coordinator_text = '';
           if(coordinators[e.transport_cycle_coordinator_id])
             coordinator_text = coordinators[e.transport_cycle_coordinator_id].display_name;
-          retval.push({ 
+          retval.push({
             display_text: text,
             coordinator_text: coordinator_text,
             start_date: e.start_date,
@@ -257,8 +257,8 @@ app.get('/api/transport_cycle/all', function(req, res) {
         });
         res.json(retval);
       });
-    });  
-  });  
+    });
+  });
 });
 app.post('/api/transport_cycle/edit', function(req, res) {
     db.TransportCycle.findOne({ _id: req.body.transport_cycle.id }, function(err, data) {
@@ -307,7 +307,7 @@ app.get('/api/transport_cycle/no_bids/:id', function(req, res) {
           for(var f in package_id_mapping)
             no_bid_list.push(package_id_mapping[f]);
           res.json(no_bid_list);
-      });      
+      });
     }
   });
 });
@@ -345,7 +345,7 @@ app.get('/api/bids/:id', function(req, res) {
             all_bids.push(current_bid);
           }
           res.json(all_bids);
-      });      
+      });
     }
   });
 });
@@ -376,15 +376,15 @@ app.post('/api/uploadcsv', function(req, res) {
       //do nothing with header in csv file
     } else {
       var data = new db.Package();
-      
+
       for (var i = 0; i < row.length; i++) {
         var val = _.isNumber(row[i]) ? parseFloat(row[i]) : row[i];
         var mapping = csvDataMapping[i];
         data[mapping] = val;
       }
-      
+
       var pIdx = packages.push(data) - 1;
-      
+
       pushToCallstack(packages[pIdx], "supply_address", "supply_lat_lon");
       pushToCallstack(packages[pIdx], "delivery_address", "delivery_lat_lon");
     }
@@ -394,7 +394,7 @@ app.post('/api/uploadcsv', function(req, res) {
     console.log(err);
   }).to(function() {
     var shiftThenRun = function(stack) {
-      if (stack.length > 0) { 
+      if (stack.length > 0) {
         (stack.shift())().then(function() {
           shiftThenRun(stack);
         });
@@ -405,14 +405,14 @@ app.post('/api/uploadcsv', function(req, res) {
           end_date: req.body.end_date,
           transport_cycle_coordinator_id: req.body.coordinator_id
         });
-      
+
         transCycle.save(function(err) {
           if (err) console.log(err);
           res.send(200);
 	});
       }
     };
-    
+
     shiftThenRun(callStack);
   });
 });
@@ -424,7 +424,7 @@ app.post('/api/bid', function(req, res) {
       if (err) console.log(err);
     });
   });
-  
+
   res.send(200);
 });
 
@@ -479,7 +479,7 @@ app.post('/api/coordinator/new', function(req, res) {
     data['address_street'] = req.body.user['address_street'];
     data['address_suburb'] = req.body.user['address_suburb'];
     data['address_postcode'] = req.body.user['address_postcode'];
-    data.save(function(err) {      
+    data.save(function(err) {
         if (err) {
           console.log(err);
           res.json({"status": "error"})
