@@ -13,7 +13,7 @@ var mailer = require('nodemailer');
 var bcrypt = require('bcrypt-nodejs');
 var passport = require('passport');
 var flash = require('connect-flash');
-var bodyParser = require('body-parser');
+var busboy = require('express-busboy');
 var compression = require('compression');
 var cookieParser = require('cookie-parser');
 var cookieSession = require('cookie-session');
@@ -22,7 +22,7 @@ var cookieSession = require('cookie-session');
 require('./conf/passport')(passport); // pass passport for configuration
 
 var app = express();
-app.use(bodyParser());
+busboy.extend(app, {upload: true});
 app.use(compression());
 
 // required for passport
@@ -354,7 +354,7 @@ app.post('/api/uploadcsv', function(req, res) {
   var mapInterface = new mapTools.MapInterface();
   var packages = [];
 
-  var tempCsvPath = req.files.transportcsv.path;
+  var tempCsvPath = req.files.transportcsv.file;
   var csvDataMapping = ["supplier_name", "supply_address",
     "supplier_street", "supplier_suburb",
     "supplier_postcode", "product_name", "variant", "variant_weight",
