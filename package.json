@@ -2,6 +2,9 @@
   "name": "food_table",
   "version" : "0.0.1",
   "private": true,
+  "engines": {
+    "node": "0.10.25"
+  },
   "dependencies": {
     "express":">4.8",
     "express-busboy":"~2.4.0",
