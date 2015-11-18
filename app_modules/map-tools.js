@@ -14,23 +14,23 @@ exports.MapInterface = function() {
 
     if (address in locations) {
       defer.resolve({ latLon: formatLatLon(locations[address]), isFromCache: true });
-    } else { 
+    } else {
       setTimeout(function() {
         maps.geocode(address, function(err, data) {
           if (err) console.log(err);
           if (typeof data !== 'undefined' && data.results.length > 0) {
             var loc = data.results[0]['geometry']['location'];
             locations[address] = loc;
-            console.log(address + " found: " + JSON.stringify(loc));
+            console.log(address + " found ("+data.status+"): " + JSON.stringify(loc));
             defer.resolve({ latLon: formatLatLon(loc), isFromCache: false });
           } else {
-            console.log("ERROR: " + address + " not found.");
+            console.log("ERROR geocoding address: " + address + " - " + data.status);
             defer.resolve({ latLon: {}, isFromCache: false });
           }
         });
       }, DELAY);
     }
-   
+
     return defer.promise;
   };
 };
