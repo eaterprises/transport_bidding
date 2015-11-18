@@ -32,7 +32,7 @@ angular.module("transportBiddingApp").directive('map',
                   bidLines.forEach(function(e) {
                     e.setMap(null);
                   });
-                  
+
                   visiblePathArray.forEach(function(e) {
                     var from = new google.maps.LatLng(e[0].lat, e[0].lon);
                     var to = new google.maps.LatLng(e[1].lat, e[1].lon);
@@ -67,6 +67,7 @@ angular.module("transportBiddingApp").directive('map',
                 };
 
                 $s.$watch('addressArray', function() {
+		  clearMarkers();
                   for (var i in $s.addressArray) {
                     var src = $s.addressArray[i].src;
                     var dest = $s.addressArray[i].dest;
@@ -101,15 +102,15 @@ angular.module("transportBiddingApp").directive('map',
                                 addToMap = true;
                               break;
                         }
-                      } 
+                      }
                       if(addToMap){
                         $s.addressArrayBidders.push(
                           {src: item.supply_address
                           ,dest: item.delivery_address
                           ,srcLatLon: item.supply_lat_lon
                           ,destLatLon: item.delivery_lat_lon
-                        });                        
-                      }     
+                        });
+                      }
                   }
 
                   for (var i in $s.addressArrayBidders) {
