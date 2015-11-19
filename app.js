@@ -32,6 +32,8 @@ app.use(passport.initialize());
 app.use(passport.session()); // persistent login sessions
 app.use(flash());
 
+app.set('view engine', 'jade');
+
 
 app.get('/admin', isLoggedIn, function(req, res) {
   res.redirect('/#/admin');
@@ -487,6 +489,12 @@ app.post('/api/coordinator/new', function(req, res) {
       res.json({"status":"ok"});
     });
 });
+
+
+app.get('/', function (req, res) {
+  res.render('index', { google_maps_api_key: process.env.GOOGLE_MAPS_API_KEY });
+});
+
 app.get('/*', function(req, res) {
   res.sendfile(__dirname + "/app" + req.path);
 });
