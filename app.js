@@ -362,7 +362,8 @@ app.post('/api/uploadcsv', function(req, res) {
     "supplier_postcode", "product_name", "variant", "variant_weight",
     "quantity", "reserve", "distributor_name", "delivery_address",
     "distributor_street", "distributor_suburb",
-    "distributor_postcode", "shipping_instructions"];
+    "distributor_postcode", "shipping_instructions",
+    "moving_at"];
 
   var callStack = [];
   var pushToCallstack = function(model, addressAttr, latLngAttr) {
@@ -382,6 +383,11 @@ app.post('/api/uploadcsv', function(req, res) {
       for (var i = 0; i < row.length; i++) {
         var val = _.isNumber(row[i]) ? parseFloat(row[i]) : row[i];
         var mapping = csvDataMapping[i];
+	if(mapping == 'moving_at') {
+	  // Convert dd/mm/yy to mm/dd/yy as anticipated by JS/Mongo date parsing
+	  match = val.match(/(\d+)\/(\d+)/)
+	  val = val.replace(/\d+\/\d+/, match[2]+'/'+match[1])
+	}
         data[mapping] = val;
       }
 

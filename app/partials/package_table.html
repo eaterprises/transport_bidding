@@ -32,7 +32,7 @@
             </th>
             <th>
               <input type="text" ng-model="search_product" class="input-medium" /><br/>
-              <a ng-click="setSortCol('product')">Product 
+              <a ng-click="setSortCol('product')">Product
                 <i ng-class="{true:'icon-chevron-up', false:'icon-chevron-down'}[isSortReverse('product')]"></i></a>
             </th>
             <th>
@@ -79,11 +79,16 @@
               <input type="text" ng-model="search_distributor_postcode" class="input-medium" /><br/>
               <a ng-click="setSortCol('distributor_postcode')">Distributor PostCode
                 <i ng-class="{true:'icon-chevron-up', false:'icon-chevron-down'}[isSortReverse('distributor_postcode')]"></i></a>
-            </th>            
+            </th>
             <th>
               <input type="text" ng-model="search_product" class="input-medium" /><br/>
               <a ng-click="setSortCol('shipping_instructions')">Shipping instructions
                 <i ng-class="{true:'icon-chevron-up', false:'icon-chevron-down'}[isSortReverse('shipping_instructions')]"></i></a>
+            </th>
+            <th>
+              <br/>
+              <a ng-click="setSortCol('moving_at')">Moving at
+                <i ng-class="{true:'icon-chevron-up', false:'icon-chevron-down'}[isSortReverse('moving_at')]"></i></a>
             </th>
           </tr>
         </thead>
@@ -106,6 +111,7 @@
             <td>{{row.distributor_suburb}}</td>
             <td>{{row.distributor_postcode}}</td>
             <td>{{row.shipping_instructions}}</td>
+            <td>{{row.moving_at}}</td>
           </tr>
         </tbody>
       </table>

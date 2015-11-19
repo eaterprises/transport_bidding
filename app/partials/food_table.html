@@ -31,6 +31,16 @@
               <a ng-click="setSortCol('distributor_suburb')">Destination
                 <i ng-class="{true:'icon-chevron-up', false:'icon-chevron-down'}[isSortReverse('distributor_suburb')]"></i></a>
             </th>
+            <th>
+              <br/>
+              <a ng-click="setSortCol('moving_at')">Date
+                <i ng-class="{true:'icon-chevron-up', false:'icon-chevron-down'}[isSortReverse('moving_at')]"></i></a>
+            </th>
+            <th>
+              <br/>
+              <a ng-click="setSortCol('moving_at')">Time
+                <i ng-class="{true:'icon-chevron-up', false:'icon-chevron-down'}[isSortReverse('moving_at')]"></i></a>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -39,6 +49,8 @@
             <td>{{row.product_name}}</td>
             <td>{{row.supplier_suburb}}</td>
             <td>{{row.distributor_suburb}}</td>
+            <td>{{row.moving_at|date:"d-M-yyyy"}}</td>
+            <td>{{row.moving_at|date:"HH:mm"}}</td>
           </tr>
         </tbody>
       </table>
