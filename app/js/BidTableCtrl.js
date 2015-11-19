@@ -10,7 +10,7 @@ angular.module("transportBiddingApp")
       http.get("/api/transport_cycle/active").success(function(data) {
         $s.transportCycleList = data;
         $s.transportCycle = data[0];
-        $s.getProductData(); 
+        $s.getProductData();
       });
     };
 
@@ -92,14 +92,14 @@ angular.module("transportBiddingApp")
 
     var showRowDetails = function(row) {
       $s.rowDetails = [{
-          desc: "Shipping Instruction",
+          desc: "Notes",
           val: row.shipping_instructions
         }, {
-          desc: "Destination Address",
-          val: row.delivery_address
+          desc: "Destination",
+          val: row.distributor_name
         }, {
-          desc: "Source Address",
-          val: row.supply_address
+          desc: "Source",
+          val: row.supplier_name
         }, {
           desc: "Quantity",
           val: row.quantity

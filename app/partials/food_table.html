@@ -53,6 +53,7 @@
     </div>
 
     <div class="span3 well">
+      <!--
       <form name="submitForm">
         <b class="muted">Name: </b><input required type="text" ng-model="bidName" hint="e.g. Jane Doe" /><br/>
         <b class="muted">Email: </b><input required type="email" ng-model="bidEmail" hint="jane@email.com" /><br/>
@@ -60,6 +61,7 @@
         <b class="muted">Comments: </b><input type="text" ng-model="bidComments" /><br/>
         <input type="submit" ng-click="placeBid()" class="btn btn-success" value="Bid"/>
       </form>
+      -->
       <h4>Details:</h4>
       <p ng-repeat="detail in rowDetails">
         <b class="muted">{{detail.desc}}:</b><br />{{detail.val}}</p>
