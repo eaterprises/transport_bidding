@@ -33,13 +33,13 @@
             </th>
             <th>
               <br/>
-              <a ng-click="setSortCol('moving_at')">Date
-                <i ng-class="{true:'icon-chevron-up', false:'icon-chevron-down'}[isSortReverse('moving_at')]"></i></a>
+              <a ng-click="setSortCol('moving_day')">Day
+                <i ng-class="{true:'icon-chevron-up', false:'icon-chevron-down'}[isSortReverse('moving_day')]"></i></a>
             </th>
             <th>
               <br/>
-              <a ng-click="setSortCol('moving_at')">Time
-                <i ng-class="{true:'icon-chevron-up', false:'icon-chevron-down'}[isSortReverse('moving_at')]"></i></a>
+              <a ng-click="setSortCol('moving_time')">Time
+                <i ng-class="{true:'icon-chevron-up', false:'icon-chevron-down'}[isSortReverse('moving_time')]"></i></a>
             </th>
           </tr>
         </thead>
@@ -49,8 +49,8 @@
             <td>{{row.product_name}}</td>
             <td>{{row.supplier_suburb}}</td>
             <td>{{row.distributor_suburb}}</td>
-            <td>{{row.moving_at|date:"d-M-yyyy"}}</td>
-            <td>{{row.moving_at|date:"HH:mm"}}</td>
+            <td>{{row.moving_day}}</td>
+            <td>{{row.moving_time|date:"HH:mm"}}</td>
           </tr>
         </tbody>
       </table>

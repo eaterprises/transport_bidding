@@ -87,8 +87,13 @@
             </th>
             <th>
               <br/>
-              <a ng-click="setSortCol('moving_at')">Moving at
-                <i ng-class="{true:'icon-chevron-up', false:'icon-chevron-down'}[isSortReverse('moving_at')]"></i></a>
+              <a ng-click="setSortCol('moving_day')">Moving day
+                <i ng-class="{true:'icon-chevron-up', false:'icon-chevron-down'}[isSortReverse('moving_day')]"></i></a>
+            </th>
+            <th>
+              <br/>
+              <a ng-click="setSortCol('moving_time')">Moving time
+                <i ng-class="{true:'icon-chevron-up', false:'icon-chevron-down'}[isSortReverse('moving_time')]"></i></a>
             </th>
           </tr>
         </thead>
@@ -111,7 +116,8 @@
             <td>{{row.distributor_suburb}}</td>
             <td>{{row.distributor_postcode}}</td>
             <td>{{row.shipping_instructions}}</td>
-            <td>{{row.moving_at}}</td>
+            <td>{{row.moving_day}}</td>
+            <td>{{row.moving_time}}</td>
           </tr>
         </tbody>
       </table>

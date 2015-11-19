@@ -34,7 +34,8 @@ var Package = new mongo.Schema({
   supply_lat_lon: LatLon,
   delivery_lat_lon: LatLon,
   is_active: { type: Boolean, default: true },
-  moving_at: Date
+  moving_day: String,
+  moving_time: String
 });
 
 var TransportCycle = new mongo.Schema({
