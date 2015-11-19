@@ -142,6 +142,14 @@ angular.module("transportBiddingApp").directive('map',
                 strokeOpacity: '0.75',
                 strokeWeight: '6'
               });
+
+	      $(ele).resizable({
+		minWidth: $("body").innerWidth(),
+		maxWidth: $("body").innerWidth(),
+		stop: function(event, ui) {
+		  google.maps.event.trigger($s.map, 'resize');
+		}
+	      });
             }
           }
         });
